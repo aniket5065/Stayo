@@ -24,19 +24,27 @@ const { Passport } = require('passport');
 
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
-main().then(() =>{
-    console.log("connected to db");
-}).catch(err =>{
-    console.error("Database Connection Error:", err.message);
-    if (err.code === 'ENOTFOUND') {
-        console.error("TIP: Your machine cannot reach the MongoDB Atlas host. Check your internet connection or IP whitelisting.");
-    }
-});
-
+if (!process.env.ATLASDB_URL && process.env.NODE_ENV === "production") {
+    console.warn("WARNING: ATLASDB_URL is not defined in production. Mongose will attempt to connect to localhost.");
+}
 
 async function main() {
-    await mongoose.connect(dbUrl);
+    try {
+        await mongoose.connect(dbUrl, {
+            serverSelectionTimeoutMS: 5000,
+            connectTimeoutMS: 10000,
+        });
+        console.log("connected to db");
+    } catch (err) {
+        console.error("Database Connection Error:", err.message);
+        if (err.code === 'ENOTFOUND' || err.name === 'MongooseServerSelectionError') {
+            console.error("TIP: Could not reach MongoDB Atlas. Please ensure 0.0.0.0/0 is added to your IP Whitelist in Atlas Network Access.");
+        }
+        throw err;
+    }
 }
+
+main();
 app.set("view engine", "ejs");
 app.set("views",path.join(__dirname,"views"));
 app.use(express.urlencoded({extended: true}));
