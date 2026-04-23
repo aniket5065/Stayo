@@ -1,3 +1,7 @@
+if (process.env.NODE_ENV !== "production") {
+    require("dotenv").config();
+}
+
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
@@ -22,10 +26,10 @@ const { Passport } = require('passport');
 
 
 
-const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
+const dbUrl = process.env.MONGODB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
-if (!process.env.ATLASDB_URL && process.env.NODE_ENV === "production") {
-    console.warn("WARNING: ATLASDB_URL is not defined in production. Mongose will attempt to connect to localhost.");
+if (!process.env.MONGODB_URL && process.env.NODE_ENV === "production") {
+    console.warn("WARNING: MONGODB_URL is not defined in production. Mongoose will attempt to connect to localhost.");
 }
 
 async function main() {
