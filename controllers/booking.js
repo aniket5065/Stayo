@@ -155,3 +155,16 @@ module.exports.renderMyBookings = async (req, res) => {
         res.redirect("/listings");
     }
 };
+
+module.exports.destroyBooking = async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+        await Booking.findByIdAndDelete(bookingId);
+        req.flash("success", "Booking cancelled successfully.");
+        res.redirect("/mybookings");
+    } catch (err) {
+        console.error("Destroy Booking Error:", err);
+        req.flash("error", "Could not cancel booking.");
+        res.redirect("/mybookings");
+    }
+};
