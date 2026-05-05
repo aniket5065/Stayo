@@ -1,4 +1,4 @@
-.body {
+body {
     font-family: "Plus Jakarta Sans", sans-serif !important;
     display: flex;
     flex-direction: column ;
@@ -6,7 +6,7 @@
       
 }
 .container {
-    flex: 1rem;
+    flex: 1;
 
 }
 
@@ -57,8 +57,7 @@
     display: flex;
     flex-wrap: wrap ;
     justify-content: center;
-    align-items: space-evenly;
-    position: absolute;
+    align-items: center;
 }
 .listing-card {
     border: none !important;
