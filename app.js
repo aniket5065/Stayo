@@ -21,8 +21,8 @@ const User = require("./models/user.js");
 
 const listingsRouter = require("./routes/listing.js");
 const reviewsRouter = require("./routes/review.js");
-const userRouter  = require("./routes/user.js")
-const { Passport } = require('passport');
+const userRouter  = require("./routes/user.js");
+const bookingRouter = require("./routes/booking.js");
 
 
 
@@ -52,6 +52,7 @@ main();
 app.set("view engine", "ejs");
 app.set("views",path.join(__dirname,"views"));
 app.use(express.urlencoded({extended: true}));
+app.use(express.json());
 app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
@@ -115,6 +116,8 @@ app.use((req, res, next)=>{
 
 app.use("/listings", listingsRouter);
 app.use("/listings/:id/reviews", reviewsRouter);
+app.use("/listings/:id/bookings", bookingRouter);
+app.use("/", bookingRouter);
 app.use("/",userRouter);
 
 app.use((err, req, res, next) => {

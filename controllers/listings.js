@@ -1,4 +1,5 @@
 const Listing = require('../models/listing.js');
+const Booking = require("../models/booking.js");
 
 
 
@@ -24,11 +25,19 @@ module.exports.showListing = async(req, res, next) =>{
     if(!listing) {
         req.flash("error", "Listing you requested for does not exist!");
         return res.redirect("/listings");
+    }
 
+    let booking = null;
+    if (req.user) {
+        booking = await Booking.findOne({ 
+            listing: id, 
+            user: req.user._id, 
+            paymentStatus: "Paid" 
+        });
     }
     
-    res.render("listings/show.ejs", {listing} )
-}
+    res.render("listings/show.ejs", { listing, booking });
+};
 
 
 module.exports.createListings = async(req, res, next) =>{

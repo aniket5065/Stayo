@@ -1,0 +1,124 @@
+<% layout("/layouts/boilerplate") %>
+<div class="row mt-3">
+    <div class="col-12 col-md-10 offset-md-1">
+        <h3 class="mb-4 text-center">My Bookings</h3>
+        <% if (allBookings && allBookings.length > 0) { %>
+            <div class="row g-3">
+                <% for (let booking of allBookings) { %>
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+                            <div class="row g-0 align-items-center">
+                                <div class="col-4 col-sm-3 col-md-2 p-2">
+                                    <img src="<%= booking.listing.image.url %>" class="img-fluid rounded-3 shadow-sm" alt="listing_image" style="object-fit: cover; height: 120px; width: 100%;">
+                                </div>
+                                <div class="col-8 col-sm-9 col-md-10">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h5 class="card-title fw-bold text-dark mb-1"><%= booking.listing.title %></h5>
+                                                <p class="card-text text-muted mb-2 small"><i class="fa-solid fa-location-dot me-1"></i><%= booking.listing.location %>, <%= booking.listing.country %></p>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge <%= booking.paymentStatus === 'Paid' ? 'bg-success' : 'bg-warning text-dark' %> mb-2">
+                                                    <%= booking.paymentStatus %>
+                                                </span>
+                                                <form action="/mybookings/<%= booking._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                                    <button class="btn btn-outline-danger btn-sm border-0"><i class="fa-solid fa-trash-can"></i></button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row align-items-center">
+                                            <div class="col-md-7 col-lg-8">
+                                                <div class="d-flex flex-wrap gap-3 small text-secondary">
+                                                    <span><strong><i class="fa-solid fa-calendar-check me-1"></i>In:</strong> <%= new Date(booking.checkIn).toLocaleDateString("en-IN") %></span>
+                                                    <span><strong><i class="fa-solid fa-calendar-xmark me-1"></i>Out:</strong> <%= new Date(booking.checkOut).toLocaleDateString("en-IN") %></span>
+                                                    <span class="text-danger fw-bold"><strong><i class="fa-solid fa-indian-rupee-sign me-1"></i>Total:</strong> &#8377;<%= booking.totalPrice.toLocaleString("en-IN") %></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-5 col-lg-4 text-md-end mt-2 mt-md-0">
+                                                <% if (booking.paymentStatus === "Paid") { %>
+                                                    <span class="text-muted small">ID: <%= booking.razorpayPaymentId %></span>
+                                                <% } else { %>
+                                                    <button class="btn btn-danger btn-sm px-4 pay-btn" data-id="<%= booking._id %>">Pay Now</button>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        <% } else { %>
+            <div class="text-center mt-5">
+                <div class="alert alert-light border shadow-sm d-inline-block p-4">
+                    <i class="fa-solid fa-hotel fa-3x mb-3 text-muted"></i>
+                    <h4>No Bookings Found</h4>
+                    <p class="text-muted">You haven't booked any stays yet.</p>
+                    <a href="/listings" class="btn btn-danger mt-2">Explore Listings</a>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    document.querySelectorAll(".pay-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const bookingId = btn.getAttribute("data-id");
+            
+            try {
+                // Call global pay route
+                const response = await fetch(`/pay/${bookingId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert(data.message || "Failed to initialize payment.");
+                    return;
+                }
+
+                const options = {
+                    key: data.key_id,
+                    amount: data.order.amount,
+                    currency: data.order.currency,
+                    name: "Stayo",
+                    description: `Payment for ${data.listingTitle}`,
+                    order_id: data.order.id,
+                    handler: async function (response) {
+                        const verifyResponse = await fetch("/verify", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        });
+
+                        const verifyData = await verifyResponse.json();
+                        if (verifyData.success) {
+                            window.location.reload();
+                        } else {
+                            alert("Payment verification failed!");
+                        }
+                    },
+                    prefill: {
+                        name: data.userName,
+                        email: data.userEmail
+                    },
+                    theme: { color: "#fe424d" }
+                };
+
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred during payment.");
+            }
+        });
+    });
+</script>
